@@ -172,11 +172,13 @@ function _catmullClark(positions, cells) {
         var avg = vec3.fromValues(0, 0, 0);
         var count = 0;
 
-        // add face points of edge.
-        for (var i = 0; i < edge.faces.length; ++i) {
-            var facePoint = edge.faces[i].facePoint;
-            vec3.add(avg, facePoint, avg);
-            ++count;
+        if (edge.faces.length !== 1) {
+            // if not a boundary edge, add face points of edge.
+            for (var i = 0; i < edge.faces.length; ++i) {
+                var facePoint = edge.faces[i].facePoint;
+                vec3.add(avg, facePoint, avg);
+                ++count;
+            }
         }
 
         // sum together the two endpoints.
@@ -208,29 +210,52 @@ function _catmullClark(positions, cells) {
     }
 
 
-    /*
-     Each original point is moved to the position
-     (F + 2R + (n-3)P) / n. See the wikipedia article for more details.
-     */
     for (var i = 0; i < positions.length; ++i) {
 
         var point = originalPoints[i];
-        var n = point.faces.length;
+        var n = 0;
+
         var newPoint = vec3.fromValues(0, 0, 0);
 
-        for (var j = 0; j < point.faces.length; ++j) {
-            var facePoint = point.faces[j].facePoint;
-            vec3.add(newPoint, newPoint, facePoint);
+        if (point.faces.length !== point.edges.size) {
+            /*
+             Boundary points are averaged with the average of boundary edge
+             midpoints. For more details, see:
+             https://graphics.stanford.edu/wikis/cs148-09-summer/Assignment3Description
+             */
+            for (var edge of point.edges) {
+                if (edge.faces.length !== 1) {
+                    continue;
+                }
+                vec3.add(newPoint, newPoint, edge.midPoint);
+                ++n;
+            }
+            vec3.scale(newPoint, newPoint, 1.0 / n);
+
+            vec3.add(newPoint, newPoint, point.point);
+
+            vec3.scale(newPoint, newPoint, 1.0 / 2);
+        } else {
+            /*
+             Each non-boundary original point is moved to the position
+             (F + 2R + (n-3)P) / n. See the wikipedia article for more details.
+             */
+            n = point.faces.length;
+
+            for (var j = 0; j < point.faces.length; ++j) {
+                var facePoint = point.faces[j].facePoint;
+                vec3.add(newPoint, newPoint, facePoint);
+            }
+
+            for (var edge of point.edges) {
+                _mad(newPoint, newPoint, edge.midPoint, 2);
+            }
+            vec3.scale(newPoint, newPoint, 1.0 / n);
+
+            _mad(newPoint, newPoint, point.point, n - 3);
+
+            vec3.scale(newPoint, newPoint, 1.0 / n);
         }
-
-        for (var edge of point.edges) {
-            _mad(newPoint, newPoint, edge.midPoint, 2);
-        }
-        vec3.scale(newPoint, newPoint, 1.0 / n);
-
-        _mad(newPoint, newPoint, point.point, n - 3);
-
-        vec3.scale(newPoint, newPoint, 1.0 / n);
 
         point.newPoint = newPoint
 
