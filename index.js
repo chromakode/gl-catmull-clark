@@ -27,16 +27,16 @@ function _catmullClark(positions, cells) {
 
     // original points, indexed by their indices.
     // For every point, we store adjacent faces and adjacent edges.
-    originalPoints = [];
+    var originalPoints = [];
 
     // original faces, in their original order.
     // For every face, we store the edges, the points, and the face point.
-    faces = [];
+    var faces = [];
 
     // original edges. Indexed by the sorted indices of their vertices
     // So the edge whose edge vertices has index `6` and `2`, will be 
     // indexed by the array [2,6]
-    edges = [];
+    var edges = [];
 
 
     /*
@@ -165,7 +165,7 @@ function _catmullClark(positions, cells) {
 
 
     // Compute the edge points and the midpoints of every edge.
-    for (key in edges) {
+    for (var key in edges) {
 
         var edge = edges[key];
 
@@ -236,8 +236,8 @@ function _catmullClark(positions, cells) {
 
     }
 
-    newPositions = [];
-    newCells = [];
+    var newPositions = [];
+    var newCells = [];
 
     var index = 0;
 
